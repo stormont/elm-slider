@@ -16,7 +16,7 @@ init =
           ( Slider.initRendering
               |> Slider.setRenderingPosition (Position 200 200)
               |> Slider.setRenderingSize 100
-              |> Slider.setRenderingOrientation Slider.Horizontal )
+              |> Slider.setRenderingOrientation Slider.Vertical )
       |> Slider.setModelData ( Slider.initData |> Slider.setDataMaxBound 5 )
   , Cmd.none
   )

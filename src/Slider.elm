@@ -107,7 +107,7 @@ setDataMinBound x data =
 
 setDataMaxBound : Int -> Data -> Data
 setDataMaxBound x data =
-  { data | minBound = x }
+  { data | maxBound = x }
 
 
 setDataOffset : Int -> Data -> Data
