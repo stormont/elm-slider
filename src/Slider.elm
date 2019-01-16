@@ -6,6 +6,7 @@ module Slider exposing
   , Msg(..)
   , Orientation(..)
   , Rendering
+  , getOneTickDistance
   , getScaledMarkerOffset
   , initData
   , initDrag
@@ -260,6 +261,15 @@ getScaledMarkerOffset rendering data =
     scalePerc = toFloat (data.maxBound - data.minBound) / toFloat rendering.size
   in
     floor (toFloat rendering.size * offsetPerc)
+
+
+getOneTickDistance : Rendering -> Data -> Float
+getOneTickDistance rendering data =
+  let
+    offsetPerc = toFloat (1 - data.minBound) / toFloat (data.maxBound - data.minBound)
+    scalePerc = toFloat (data.maxBound - data.minBound) / toFloat rendering.size
+  in
+    toFloat rendering.size * offsetPerc
 
 
 interactionEvents : List (Attribute Msg)
