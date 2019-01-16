@@ -11,6 +11,7 @@ module Slider exposing
   , initDrag
   , initModel
   , initRendering
+  , interactionEvents
   , setDataMaxBound
   , setDataMinBound
   , setDataOffset
@@ -27,7 +28,12 @@ module Slider exposing
   , update
   )
 
+import Html exposing (Attribute)
+import Html.Events exposing (on)
+import Json.Decode as Decode
 import Mouse exposing (Position)
+import SingleTouch
+import Touch exposing (Coordinates, clientPos)
 
 
 -- MODEL
@@ -150,30 +156,33 @@ initDrag =
 
 
 type Msg
-    = DragStart Position
-    | DragAt Position
-    | DragEnd Position
+    = MouseDragStart Position
+    | MouseDragAt Position
+    | MouseDragEnd Position
     | SetOffset Int Position
+    | TouchDragStart Coordinates
+    | TouchDragAt Coordinates
+    | TouchDragEnd Coordinates
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
-    DragStart xy ->
+    MouseDragStart xy ->
       ( model
           |> setModelData (model.data |> setDataStartOffset model.data.offset)
           |> setModelDrag (Just (Drag xy xy))
       , Cmd.none
       )
 
-    DragAt xy ->
+    MouseDragAt xy ->
       ( model
           |> setModelData (model.data |> setDataOffset (getBoundedPosition model))
           |> setModelDrag (Maybe.map (\{start} -> Drag start xy) model.drag)
       , Cmd.none
       )
 
-    DragEnd _ ->
+    MouseDragEnd _ ->
       ( model
           |> setModelDrag Nothing
       , Cmd.none
@@ -185,6 +194,32 @@ update msg model =
           |> setModelDrag Nothing
       , Cmd.none
       )
+    
+    TouchDragStart xy ->
+      ( model
+          |> setModelData (model.data |> setDataStartOffset model.data.offset)
+          |> setModelDrag (Just (Drag (coordsToPos xy) (coordsToPos xy)))
+      , Cmd.none
+      )
+
+    TouchDragAt xy ->
+      ( model
+          |> setModelData (model.data |> setDataOffset (getBoundedPosition model))
+          |> setModelDrag (Maybe.map (\{start} -> Drag start (coordsToPos xy)) model.drag)
+      , Cmd.none
+      )
+
+    TouchDragEnd _ ->
+      ( model
+          |> setModelDrag Nothing
+      , Cmd.none
+      )
+
+
+coordsToPos : Coordinates -> Position
+coordsToPos xs =
+  clientPos xs
+    |> (\(x, y) -> Position (Basics.round x) (Basics.round y))
 
 
 getBoundedPosition : Model -> Int
@@ -227,6 +262,15 @@ getScaledMarkerOffset rendering data =
     floor (toFloat rendering.size * offsetPerc)
 
 
+interactionEvents : List (Attribute Msg)
+interactionEvents =
+    [ SingleTouch.onStart TouchDragStart
+    , SingleTouch.onMove TouchDragAt
+    , SingleTouch.onEnd TouchDragEnd
+    , on "mousedown" (Decode.map MouseDragStart Mouse.position)
+    ]
+
+
 -- SUBSCRIPTIONS
 
 
@@ -237,4 +281,7 @@ subscriptions model =
       Sub.none
 
     Just _ ->
-      Sub.batch [ Mouse.moves DragAt, Mouse.ups DragEnd ]
+      Sub.batch
+        [ Mouse.moves MouseDragAt
+        , Mouse.ups MouseDragEnd
+        ]
